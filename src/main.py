@@ -12,18 +12,16 @@ access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
+    
+class MyStreamListener(tweepy.StreamListener):
 
-account = "@elonmusk"
-tweets = api.user_timeline(account, count=10, page=1)
+    def on_status(self, status):
+        print("name : %s, screen_name : %s" % (status.user.name,status.user.screen_name))
+        print("text : %s " % status.text)
+        print("-"*50)
 
-num = 1 #ツイート数を計算するための変数
-for tweet in tweets:
-    print('twid : ', tweet.id)               # tweetのID
-    print('user : ', tweet.user.screen_name)  # ユーザー名
-    print('date : ', tweet.created_at)      # 呟いた日時
-    print(tweet.text)                  # ツイート内容
-    print('favo : ', tweet.favorite_count)  # ツイートのいいね数
-    print('retw : ', tweet.retweet_count)  # ツイートのリツイート数
-    print('ツイート数 : ', num) # ツイート数
-    print('='*80) # =を80個表示
-    num += 1 # ツイート数を計算
+myStreamListener = MyStreamListener()
+myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
+# filter word
+# user_idは、https://idtwi.com/ で調べた
+myStream.filter(track=['DOGE'], follow=['44196397'])
