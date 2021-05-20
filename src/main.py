@@ -1,15 +1,41 @@
 import os
+import asyncio
+import sys
 import tweepy
+import pybotters
 from discordwebhook import Discord
 from dotenv import load_dotenv
 load_dotenv()
 
+# 環境変数
+#Twitter
 consumer_key = os.getenv('TWITTER_CONSUMER_KEY')
 consumer_secret = os.getenv('TWITTER_CONSUMER_SECRET_KEY')
 access_token = os.getenv('TWITTER_ACCESS_TOKEN')
 access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
 
-discord_webhook_url = 'https://discordapp.com/api/webhooks/839413656479203338/DxeFU641GxLeVRLZ-VoMBUos7TL8Dlc4JAqQ2u6qZvFpabZhIaHbj7mhasoW98c2ybRk'
+#FTX
+ftx_api_key = os.getenv('FTX_API_KEY')
+ftx_api_secret = os.getenv('FTX_API_SECRET')
+
+#Discord
+discord_webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
+
+FTX_API_KEY = os.getenv('FTX_API_KEY')
+FTX_API_SECRET = os.getenv('FTX_API_SECRET')
+
+api = {
+    'ftx':[FTX_API_KEY , FTX_API_SECRET],
+}
+
+parameters = {
+  "market": "DOGE-USD",
+  "side": "buy",
+  "price": None,
+  "type": "market",
+  "size": 10,
+  "reduceOnly": False
+}
 
 # Twitterオブジェクトの生成
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -18,18 +44,23 @@ api = tweepy.API(auth)
 
 #discordのウェブフック
 discord = Discord(url=discord_webhook_url)
-    
 class MyStreamListener(tweepy.StreamListener):
-
-    def on_status(self, status):
-        if "@" in status.text and not "DOGE" in status.text:
-           pass
-        else:
-            print("name : %s, screen_name : %s" % (status.user.name,status.user.screen_name))
-            print("text : %s " % status.text)
-            print("-"*50)
+    async def on_status(self, status):
+        if 44196397 == status.user.id and "DOGE" in status.text:
+            if discord is not None:
+                discord.post(content="Elon Musk mentioned DOGE!! \n" + status.text)
+            else:
+                pass
+            if FTX_API_KEY == None or FTX_API_SECRET == None:
+                    print('no env')
+                    sys.exit(1)
             
-            discord.post(content="Elon Musk mentioned DOGE!! \n" + status.text)
+            else:
+                async with pybotters.Client(apis=api, base_url='https://ftx.com/api') as client:
+                    resp = await client.post('/orders', data=parameters)
+                    print(resp)
+        else:
+            pass
 
 myStreamListener = MyStreamListener()
 myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
